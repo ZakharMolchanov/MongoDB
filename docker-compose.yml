@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  backend:
+    build: ./backend
+    container_name: flask_app
+    ports:
+      - "5000:5000"
+    environment:
+      - FLASK_ENV=development
+      - POSTGRES_URL=postgresql://postgres:postgres@postgres:5432/mydb
+      - MONGO_URL=mongodb://mongo:27017/
+      - SECRET_KEY=supersecretkey
+    depends_on:
+      - mongo
+      - postgres
+
+  postgres:
+    image: postgres:13
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: mydb
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./docker/init_postgres.sql:/docker-entrypoint-initdb.d/init_postgres.sql
+
+  mongo:
+    image: mongo:5
+    ports:
+      - "27017:27017"
+    volumes:
+      - ./docker/init_mongo.js:/docker-entrypoint-initdb.d/init_mongo.js
+
+volumes:
+  pgdata:

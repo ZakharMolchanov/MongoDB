@@ -11,6 +11,7 @@ services:
       - POSTGRES_URL=postgresql://postgres:postgres@postgres:5432/mydb
       - MONGO_URL=mongodb://mongo:27017/
       - SECRET_KEY=supersecretkey
+      - ADMIN_EMAILS=admin@example.com
     depends_on:
       - mongo
       - postgres

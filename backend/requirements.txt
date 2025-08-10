@@ -5,3 +5,6 @@ pymongo
 flask_cors
 bcrypt
 PyJWT
+Flask-PyMongo
+flasgger
+json5

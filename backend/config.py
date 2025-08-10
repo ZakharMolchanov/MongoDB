@@ -6,6 +6,8 @@ class Config:
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
     # MongoDB
-    MONGO_URI = os.getenv("MONGO_URI", "mongodb://mongo:27017/")
+    MONGO_URI = os.getenv("MONGO_URI", "mongodb://mongo:27017/mongo_train")
     MONGO_DBNAME = os.getenv("MONGO_DBNAME", "mongo_train")
     SECRET_KEY = os.getenv("SECRET_KEY", "supersecretkey")
+
+    ADMIN_EMAILS = os.getenv("ADMIN_EMAILS", "admin@example.com")  

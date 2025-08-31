@@ -230,3 +230,43 @@ def delete_assignment(user_id, assignment_id):
     db.session.delete(a)
     db.session.commit()
     return jsonify({"message": "Assignment deleted"})
+
+@assignments_bp.route("", methods=["GET"])
+@token_required
+def list_assignments(user_id):
+    """
+    ---
+    tags: [Assignments]
+    summary: Получить список всех заданий с темами
+    responses:
+      200:
+        schema:
+          type: array
+          items:
+            type: object
+    """
+    # Лёгкий join по теме
+    q = db.session.query(
+        Assignment.assignment_id,
+        Assignment.title,
+        Assignment.description,
+        Assignment.difficulty,
+        Assignment.created_at,
+        Topic.topic_id,
+        Topic.title.label("topic_title"),
+    ).join(Topic, Topic.topic_id == Assignment.topic_id).order_by(Topic.topic_id, Assignment.assignment_id)
+
+    items = []
+    for a in q.all():
+        items.append({
+            "assignment_id": a.assignment_id,
+            "title": a.title,
+            "description": a.description,
+            "difficulty": a.difficulty,
+            "created_at": a.created_at.isoformat() if a.created_at else None,
+            "topic": {
+                "topic_id": a.topic_id,
+                "title": a.topic_title
+            }
+        })
+    return jsonify(items), 200

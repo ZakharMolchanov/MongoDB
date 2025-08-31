@@ -84,23 +84,111 @@ CREATE INDEX IF NOT EXISTS idx_completed_assignments_user_id ON completed_assign
 CREATE INDEX IF NOT EXISTS idx_queries_user_id ON queries(user_id);
 CREATE INDEX IF NOT EXISTS idx_queries_assignment_id ON queries(assignment_id);
 
--- ==========================
--- ТЕСТОВЫЕ ДАННЫЕ (без хардкода id = 1)
--- ==========================
-WITH t AS (
-  INSERT INTO topics (title, description, difficulty)
-  VALUES ('Mongo Basics', 'Простые операции find', 'easy')
-  RETURNING topic_id
-),
-a AS (
-  INSERT INTO assignments (topic_id, title, description, difficulty)
-  SELECT t.topic_id, 'Найди активные заказы', 'Выбери все заказы со статусом "A"', 'easy'
-  FROM t
-  RETURNING assignment_id
-)
+-- ===== Темы =====
+INSERT INTO topics (title, description, difficulty) VALUES
+('Mongo Basics', 'Базовые запросы find/projection/sort/limit', 'easy'),
+('Aggregations I', 'Простые агрегаты с $match/$group', 'medium'),
+('Aggregations II', 'Агрегации на пользователях и товарах', 'medium');
+
+-- ===== Задания (Basics) =====
+INSERT INTO assignments (topic_id, title, description, difficulty)
+SELECT t.topic_id, 'Найди активные заказы', 'Верни все заказы со статусом "A". Отсортируй по _id (возрастание). Коллекция: orders', 'easy'
+FROM topics t WHERE t.title='Mongo Basics';
+
+INSERT INTO assignments (topic_id, title, description, difficulty)
+SELECT t.topic_id, 'Пользователи старше 30 (проекция)', 'Найди пользователей с age > 30. Верни только name и city (без _id). Отсортируй по name.', 'easy'
+FROM topics t WHERE t.title='Mongo Basics';
+
+INSERT INTO assignments (topic_id, title, description, difficulty)
+SELECT t.topic_id, 'Топ-2 дорогих товара', 'Выведи 2 самых дорогих товара (product, price). Отсортируй по price по убыванию. Коллекция: products', 'easy'
+FROM topics t WHERE t.title='Mongo Basics';
+
+-- ===== Задания (Aggregations I) =====
+INSERT INTO assignments (topic_id, title, description, difficulty)
+SELECT t.topic_id, 'Количество заказов по статусу', 'Сосчитай количество заказов по полю status. Верни документы вида {_id: <status>, count: <number>}. Отсортируй по _id.', 'medium'
+FROM topics t WHERE t.title='Aggregations I';
+
+INSERT INTO assignments (topic_id, title, description, difficulty)
+SELECT t.topic_id, 'Средняя цена по категории', 'Посчитай среднюю цену товаров по категории. Верни {_id: <category>, avgPrice: <number>} с округлением не требуется. Отсортируй по _id.', 'medium'
+FROM topics t WHERE t.title='Aggregations I';
+
+INSERT INTO assignments (topic_id, title, description, difficulty)
+SELECT t.topic_id, 'Сумма и средняя сумма заказов', 'Подсчитай total и avg по полю amount в orders. Верни один документ {_id: null, total: <sum>, avg: <avg>}.', 'medium'
+FROM topics t WHERE t.title='Aggregations I';
+
+-- ===== Задания (Aggregations II) =====
+INSERT INTO assignments (topic_id, title, description, difficulty)
+SELECT t.topic_id, 'Пользователи по городам', 'Сосчитай количество пользователей по city. Верни {_id: <city>, count: <n>} и отсортируй по _id.', 'medium'
+FROM topics t WHERE t.title='Aggregations II';
+
+INSERT INTO assignments (topic_id, title, description, difficulty)
+SELECT t.topic_id, 'Количество товаров в наличии', 'Посчитай, сколько товаров in_stock=true по категориям. Верни {_id: <category>, count: <n>}. Отсортируй по _id.', 'medium'
+FROM topics t WHERE t.title='Aggregations II';
+
+INSERT INTO assignments (topic_id, title, description, difficulty)
+SELECT t.topic_id, 'Мин/Макс цена', 'Найди минимальную и максимальную цену в products. Верни один документ {_id: null, min: <min>, max: <max>}.', 'medium'
+FROM topics t WHERE t.title='Aggregations II';
+
+-- ===== Тесты =====
+-- 1) Basics: активные заказы
 INSERT INTO assignment_tests (assignment_id, expected_result, test_description)
-SELECT
-  a.assignment_id,
-  '[{"_id": "1", "status": "A", "amount": 100}, {"_id": "3", "status": "A", "amount": 300}]'::jsonb,
-  'Должны вернуться только заказы со статусом "A", в порядке по _id'
-FROM a;
+SELECT a.assignment_id,
+       '[{"_id":"1","status":"A","amount":100},{"_id":"3","status":"A","amount":300}]'::jsonb,
+       'Вернуть только заказы со статусом A, отсортировать по _id'
+FROM assignments a WHERE a.title='Найди активные заказы';
+
+-- 2) Basics: пользователи >30, только name/city, сорт по name
+INSERT INTO assignment_tests (assignment_id, expected_result, test_description)
+SELECT a.assignment_id,
+       '[{"name":"Charlie","city":"Berlin"},{"name":"Diana","city":"London"}]'::jsonb,
+       'age > 30, проекция {name:1, city:1, _id:0}, сорт по name'
+FROM assignments a WHERE a.title='Пользователи старше 30 (проекция)';
+
+-- 3) Basics: топ-2 по цене (desc)
+INSERT INTO assignment_tests (assignment_id, expected_result, test_description)
+SELECT a.assignment_id,
+       '[{"product":"Laptop","price":1200},{"product":"Monitor","price":300}]'::jsonb,
+       'две записи с наибольшей ценой'
+FROM assignments a WHERE a.title='Топ-2 дорогих товара';
+
+-- 4) Agg I: count по статусу
+INSERT INTO assignment_tests (assignment_id, expected_result, test_description)
+SELECT a.assignment_id,
+       '[{"_id":"A","count":2},{"_id":"B","count":1}]'::jsonb,
+       'group by status, сорт по _id'
+FROM assignments a WHERE a.title='Количество заказов по статусу';
+
+-- 5) Agg I: средняя цена по категории
+INSERT INTO assignment_tests (assignment_id, expected_result, test_description)
+SELECT a.assignment_id,
+       '[{"_id":"Accessories","avgPrice":35},{"_id":"Electronics","avgPrice":750}]'::jsonb,
+       'avg по price, сорт по _id'
+FROM assignments a WHERE a.title='Средняя цена по категории';
+
+-- 6) Agg I: сумма и средняя сумма заказов
+INSERT INTO assignment_tests (assignment_id, expected_result, test_description)
+SELECT a.assignment_id,
+       '[{"_id":null,"total":600,"avg":200}]'::jsonb,
+       'sum и avg по amount'
+FROM assignments a WHERE a.title='Сумма и средняя сумма заказов';
+
+-- 7) Agg II: пользователи по городам
+INSERT INTO assignment_tests (assignment_id, expected_result, test_description)
+SELECT a.assignment_id,
+       '[{"_id":"Berlin","count":1},{"_id":"London","count":2},{"_id":"Paris","count":1}]'::jsonb,
+       'group by city, сорт по _id'
+FROM assignments a WHERE a.title='Пользователи по городам';
+
+-- 8) Agg II: товары в наличии по категориям
+INSERT INTO assignment_tests (assignment_id, expected_result, test_description)
+SELECT a.assignment_id,
+       '[{"_id":"Accessories","count":1},{"_id":"Electronics","count":2}]'::jsonb,
+       'in_stock=true, group by category'
+FROM assignments a WHERE a.title='Количество товаров в наличии';
+
+-- 9) Agg II: min/max
+INSERT INTO assignment_tests (assignment_id, expected_result, test_description)
+SELECT a.assignment_id,
+       '[{"_id":null,"min":25,"max":1200}]'::jsonb,
+       'min/max по price'
+FROM assignments a WHERE a.title='Мин/Макс цена';

@@ -1,0 +1,9 @@
+flask
+flask_sqlalchemy
+psycopg2-binary
+flask_cors
+bcrypt
+PyJWT
+flasgger
+pymongo
+Flask-PyMongo

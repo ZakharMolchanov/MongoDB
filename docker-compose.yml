@@ -1,43 +1,77 @@
-# docker-compose.yml (в корне репозитория)
+version: "3.9"
+
 services:
-  backend:
+  # 🔑 AUTH SERVICE
+  auth-service:
     build:
-      context: ./backend
+      context: ./auth-service
       dockerfile: Dockerfile
-    container_name: flask_app
+    container_name: auth-service
     restart: unless-stopped
     ports:
-      - "5000:5000"
+      - "5001:5001"
     environment:
-      # эти имена должны совпадать с теми, что читает твой backend/config.py
       - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/mydb
-      - MONGO_URI=mongodb://mongo:27017/mongo_train
-      - MONGO_DBNAME=mongo_train
       - SECRET_KEY=supersecretkey
       - ADMIN_EMAILS=admin@example.com
     depends_on:
-      - mongo
       - postgres
-    
     volumes:
-      - ./backend:/app
+      - ./auth-service:/app
 
+  # 🤖 AI SERVICE (DeepSeek)
+  ai-integration-service:
+    build:
+      context: ./ai-integration-service
+      dockerfile: Dockerfile
+    container_name: ai-integration-service
+    restart: unless-stopped
+    ports:
+      - "8088:8088"
+    environment:
+      - DEEPSEEK_API_KEY=sk-25f9861dd1a94f98a4017ae35de7cf37
+      - DEEPSEEK_MODEL=deepseek-chat
+      - DEEPSEEK_BASE=https://api.deepseek.com/v1
+      - CORS_ALLOW_ORIGINS=http://localhost:5173,http://frontend:5173
+
+  # 🌐 FRONTEND
   frontend:
     build:
-      context: ./frontend        
+      context: ./frontend
       dockerfile: Dockerfile
     container_name: mongo-trainer-frontend
     restart: unless-stopped
     ports:
       - "5173:5173"
-    environment:
-      - VITE_API_URL=http://localhost:5000
+  # Для разработки используем относительные пути (/auth и /api) и прокси Vite.
+  # Уберите переменные VITE_AUTH_URL/VITE_CORE_URL, чтобы фронт не посылал запросы
+  # напрямую на backend контейнеры.
     volumes:
-      - ./frontend:/app          
-      - /app/node_modules        
+      - ./frontend:/app
+      - /app/node_modules
     depends_on:
-      - backend
+      - auth-service
+      - core-service
+      - ai-integration-service
 
+  # 🌐 CORE SERVICE
+  core-service:
+    build:
+      context: ./core-service
+      dockerfile: Dockerfile
+    container_name: core-service
+    restart: unless-stopped
+    ports:
+      - "5002:5002"
+    environment:
+      - MONGO_URI=mongodb://mongo:27017/mongo_train
+      - MONGO_DBNAME=mongo_train
+    depends_on:
+      - mongo
+    volumes:
+      - ./core-service:/app
+
+  # 🗄 POSTGRES
   postgres:
     image: postgres:13
     restart: unless-stopped
@@ -51,6 +85,7 @@ services:
       - pgdata:/var/lib/postgresql/data
       - ./docker/init_postgres.sql:/docker-entrypoint-initdb.d/init_postgres.sql
 
+  # 🍃 MONGO
   mongo:
     image: mongo:5
     restart: unless-stopped

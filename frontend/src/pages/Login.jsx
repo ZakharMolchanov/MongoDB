@@ -9,15 +9,20 @@ export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [err, setErr] = useState("");
+  const [loading, setLoading] = useState(false); // Состояние для загрузки
 
   const onSubmit = async (e) => {
     e.preventDefault();
     setErr("");
+    setLoading(true);  // Начинаем процесс загрузки
     try {
       await login(email, password);
       nav(location.state?.from || "/topics", { replace: true });
     } catch (e) {
-      setErr(e?.response?.data?.error || "Ошибка входа");
+      const msg = e?.message || e?.response?.data?.error || "Ошибка входа";
+      setErr(msg);
+    } finally {
+      setLoading(false); // Завершаем процесс загрузки
     }
   };
 
@@ -25,7 +30,7 @@ export default function Login() {
     <div className="auth-card">
       <h2>Добро пожаловать</h2>
       <p>Войдите в аккаунт, чтобы продолжить</p>
-      {err && <div className="error-box">{err}</div>}
+      {err && <div className="error-box">{err}</div>} {/* Отображение ошибок */}
       <form onSubmit={onSubmit} className="auth-form">
         <div>
           <label>Email</label>
@@ -47,8 +52,8 @@ export default function Login() {
             required
           />
         </div>
-        <button className="btn primary" type="submit">
-          Войти
+        <button className="btn primary" type="submit" disabled={loading}>
+          {loading ? "Загрузка..." : "Войти"} {/* Кнопка с индикатором загрузки */}
         </button>
       </form>
       <p>

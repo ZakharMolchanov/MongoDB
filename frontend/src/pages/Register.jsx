@@ -12,6 +12,8 @@ export default function Register() {
     password: "",
   });
   const [err, setErr] = useState("");
+  const [info, setInfo] = useState("");
+  const [loading, setLoading] = useState(false); // Состояние для загрузки
 
   const onChange = (e) =>
     setForm((f) => ({ ...f, [e.target.name]: e.target.value }));
@@ -19,11 +21,22 @@ export default function Register() {
   const onSubmit = async (e) => {
     e.preventDefault();
     setErr("");
+    setInfo("");
+    setLoading(true);  // Начинаем загрузку
     try {
       await register(form);
-      nav("/login");
+      nav("/topics");
     } catch (e) {
-      setErr(e?.response?.data?.error || "Ошибка регистрации");
+      // auth context throws Error with friendly message. If message indicates email exists, show info box.
+      const msg = e?.message || e?.response?.data?.error || "Ошибка регистрации";
+      const lower = String(msg).toLowerCase();
+      if (lower.includes("существ" ) || lower.includes("already")) {
+        setInfo(msg);
+      } else {
+        setErr(msg);
+      }
+    } finally {
+      setLoading(false);  // Завершаем загрузку
     }
   };
 
@@ -31,7 +44,8 @@ export default function Register() {
     <div className="auth-card">
       <h2>Создать аккаунт</h2>
       <p>Присоединяйтесь к тренажеру MongoDB</p>
-      {err && <div className="error-box">{err}</div>}
+  {err && <div className="error-box">{err}</div>} {/* Выводим ошибки */}
+  {info && <div className="info-box">{info}</div>} {/* Информационные сообщения */}
       <form onSubmit={onSubmit} className="auth-form">
         <div>
           <label>Email</label>
@@ -73,10 +87,11 @@ export default function Register() {
             placeholder="••••••••"
             onChange={onChange}
             required
+            minLength={8}  // Требуем минимум 8 символов
           />
         </div>
-        <button className="btn primary" type="submit">
-          Зарегистрироваться
+        <button className="btn primary" type="submit" disabled={loading}>
+          {loading ? "Загрузка..." : "Зарегистрироваться"} {/* Кнопка с индикатором */}
         </button>
       </form>
       <p>

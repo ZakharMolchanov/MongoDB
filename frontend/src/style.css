@@ -106,6 +106,14 @@ a:hover{color:var(--accent-600)}
   box-shadow: 0 8px 24px rgba(16,163,127,.08);
 }
 
+/* Admin pages */
+.admin-grid{display:grid; grid-template-columns:1fr 350px; gap:18px}
+.table td, .table th{padding:10px 8px; border-bottom:1px solid var(--border)}
+.table tr:hover{background:#fbfffb}
+.modal-backdrop{position:fixed; left:0; right:0; top:0; bottom:0; background:rgba(0,0,0,.45); display:flex; align-items:center; justify-content:center}
+.modal{width:480px; background:var(--card); padding:20px; border-radius:10px}
+.small{font-size:13px; color:var(--muted)}
+
 .auth-card h2 {
   margin-top: 0;
   font-size: 26px;
@@ -162,4 +170,23 @@ a:hover{color:var(--accent-600)}
   padding: 10px 14px;
   border-radius: 10px;
   font-size: 14px;
+}
+.info-box {
+  background: #ecfdf5;
+  border: 1px solid #bbf7d0;
+  color: #065f46;
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-size: 14px;
+}
+.assignment-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: transform 0.2s ease;
+}
+
+.assignment-card:hover {
+  transform: translateY(-4px);
+  border-color: var(--accent);
 }

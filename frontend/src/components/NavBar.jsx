@@ -26,10 +26,18 @@ export default function NavBar() {
         <div className="actions">
           {user ? (
             <>
-              <span style={{ marginRight: "12px", color: "#0f241f" }}>
+              {user.is_admin && (
+                <span style={{marginRight:8}}>
+                  <Link to="/admin/logs" className="btn ghost" style={{marginRight:6}}>Logs</Link>
+                  <Link to="/admin/users" className="btn ghost" style={{marginRight:6}}>Users</Link>
+                  <Link to="/admin/topics" className="btn ghost" style={{marginRight:6}}>Topics</Link>
+                  <Link to="/admin/assignments" className="btn ghost">Assignments</Link>
+                </span>
+              )}
+              <span className="user-name">
                 👤 {user.first_name} {user.last_name}
               </span>
-              <button onClick={logout} className="btn primary" style={{ background: "#dc2626" }}>
+              <button onClick={logout} className="btn logout-btn">
                 Выйти
               </button>
             </>

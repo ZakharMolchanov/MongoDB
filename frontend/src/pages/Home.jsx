@@ -1,7 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 
-export default function Home(){
+export default function Home() {
   return (
     <>
       <section className="hero">
@@ -14,34 +14,34 @@ export default function Home(){
               сравнит с эталоном и покажет результат. История попыток, тесты и тайминги — всё в одном месте.
             </p>
 
-            <div style={{display:'flex',gap:10, marginTop:16, flexWrap:'wrap'}}>
+            <div style={{ display: "flex", gap: 10, marginTop: 16, flexWrap: "wrap" }}>
               <Link to="/register" className="btn primary">Начать бесплатно</Link>
               <Link to="/login" className="btn">У меня уже есть аккаунт</Link>
             </div>
 
-            <div className="hero-card" style={{marginTop:18}}>
-              <div style={{fontWeight:700, marginBottom:8}}>Пример решения</div>
+            <div className="hero-card" style={{ marginTop: 18 }}>
+              <div style={{ fontWeight: 700, marginBottom: 8 }}>Пример решения</div>
               <div className="kbd">
-{`db.orders
+                {`db.orders
   .find({ status: 'A' })
   .sort({_id: 1});`}
               </div>
-              <div style={{marginTop:10, color:'var(--muted)'}}>
+              <div style={{ marginTop: 10, color: "var(--muted)" }}>
                 Поддерживаются <b>find</b> и <b>aggregate</b> (+ sort/limit). Ошибки возвращаются прямо от MongoDB — учись на реальных ответах.
               </div>
             </div>
           </div>
 
           <div className="hero-card">
-            <div style={{fontWeight:700, marginBottom:6}}>Как это работает</div>
-            <ol style={{margin:0, paddingLeft:18, color:'var(--muted)', lineHeight:1.6}}>
+            <div style={{ fontWeight: 700, marginBottom: 6 }}>Как это работает</div>
+            <ol style={{ margin: 0, paddingLeft: 18, color: "var(--muted)", lineHeight: 1.6 }}>
               <li>Выбираешь тему и задание</li>
               <li>Пишешь команду в стиле <i>mongo shell</i></li>
               <li>Мы запускаем её в изолированной MongoDB</li>
               <li>Сравниваем результат с эталоном из Postgres</li>
               <li>Показываем проход тестов и сохраняем попытку</li>
             </ol>
-            <div style={{marginTop:14}}>
+            <div style={{ marginTop: 14 }}>
               <Link to="/topics" className="btn">Список тем</Link>
             </div>
           </div>

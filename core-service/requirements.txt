@@ -1,0 +1,12 @@
+flask
+flask_sqlalchemy
+psycopg2-binary
+pymongo
+flask_cors==3.0.10
+bcrypt
+PyJWT
+Flask-PyMongo
+flasgger
+json5
+flask-cors==3.0.10
+requests  

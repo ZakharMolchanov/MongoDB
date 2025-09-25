@@ -1,29 +1,59 @@
 import axios from "axios";
 
-const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || "http://localhost:5000",
-  withCredentials: false,
+// Создаём экземпляры axios с базовыми URL из переменных окружения
+// Отправляем auth-запросы через фронт-прокси (/auth) в dev/prod по умолчанию.
+const authApi = axios.create({
+  baseURL: import.meta.env.VITE_AUTH_URL || "/auth", // можно переопределить в env
+  withCredentials: true,
 });
 
-api.interceptors.request.use((config) => {
+// coreApi обращается через префикс /api (через Vite proxy или nginx)
+const coreApi = axios.create({
+  baseURL: import.meta.env.VITE_CORE_API_URL || "/api",
+  withCredentials: true,
+});
+
+// Интерсепторы: добавляем Authorization и логируем
+authApi.interceptors.request.use((config) => {
   const token = localStorage.getItem("token");
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
+  if (token) config.headers.Authorization = `Bearer ${token}`;
   return config;
 });
 
+coreApi.interceptors.request.use((config) => {
+  const token = localStorage.getItem("token");
+  console.log("[coreApi] sending", config.method, config.url, "token:", token);
+  if (token) config.headers.Authorization = `Bearer ${token}`;
+  return config;
+});
+
+coreApi.interceptors.response.use(
+  (res) => res,
+  (err) => {
+    console.error("[coreApi] response error", err?.response?.status, err?.response?.data);
+    return Promise.reject(err);
+  }
+);
+
 // auth
-export const authApi = {
-  register: (payload) => api.post("/auth/register", payload),
-  login: (payload) => api.post("/auth/login", payload),
-  me: () => api.get("/auth/me"),
+export const authApiMethods = {
+  // authApi.baseURL уже содержит /auth (по умолчанию), поэтому эндпоинты относительные
+  register: (payload) => authApi.post(`/register`, payload),
+  login: (payload) => authApi.post(`/login`, payload),
+  me: () => authApi.get(`/me`),
+  isAdmin: (userId) => authApi.get(`/is-admin/${userId}`),
 };
 
 // topics
 export const topicsApi = {
-  getAll: () => api.get("/topics"),
-  getOne: (id) => api.get(`/topics/${id}`),
+  getAll: (params) => coreApi.get(`/topics`, { params }),  // optional params: q, difficulty
+  getOne: (id) => coreApi.get(`/topics/${id}`),
 };
 
-export default api;
+export const assignmentsApi = {
+  getByTopic: (topicId) => coreApi.get(`/topics/${topicId}/assignments`),
+  list: (params) => coreApi.get(`/assignments`, { params }), // optional params: q, topic_id
+};
+
+// Export coreApi as the default axios instance so `import api from "../api"` works
+export default coreApi;

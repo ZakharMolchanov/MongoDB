@@ -73,6 +73,8 @@ CREATE TABLE IF NOT EXISTS queries (
     result_count INT,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
+ALTER TABLE users ADD COLUMN is_admin BOOLEAN DEFAULT FALSE;
+
 
 -- ==========================
 -- Индексы
@@ -83,6 +85,9 @@ CREATE INDEX IF NOT EXISTS idx_assignment_tests_assignment_id ON assignment_test
 CREATE INDEX IF NOT EXISTS idx_completed_assignments_user_id ON completed_assignments(user_id);
 CREATE INDEX IF NOT EXISTS idx_queries_user_id ON queries(user_id);
 CREATE INDEX IF NOT EXISTS idx_queries_assignment_id ON queries(assignment_id);
+
+ALTER TABLE assignments
+ADD COLUMN schema_json JSONB;
 
 -- ===== Темы =====
 INSERT INTO topics (title, description, difficulty) VALUES
@@ -133,7 +138,7 @@ FROM topics t WHERE t.title='Aggregations II';
 -- 1) Basics: активные заказы
 INSERT INTO assignment_tests (assignment_id, expected_result, test_description)
 SELECT a.assignment_id,
-       '[{"_id":"1","status":"A","amount":100},{"_id":"3","status":"A","amount":300}]'::jsonb,
+  '[{"_id":1,"status":"A","amount":100},{"_id":3,"status":"A","amount":300}]'::jsonb,
        'Вернуть только заказы со статусом A, отсортировать по _id'
 FROM assignments a WHERE a.title='Найди активные заказы';
 
@@ -147,7 +152,7 @@ FROM assignments a WHERE a.title='Пользователи старше 30 (пр
 -- 3) Basics: топ-2 по цене (desc)
 INSERT INTO assignment_tests (assignment_id, expected_result, test_description)
 SELECT a.assignment_id,
-       '[{"product":"Laptop","price":1200},{"product":"Monitor","price":300}]'::jsonb,
+  '[{"product":"Laptop","price":3000},{"product":"Phone","price":1000}]'::jsonb,
        'две записи с наибольшей ценой'
 FROM assignments a WHERE a.title='Топ-2 дорогих товара';
 
@@ -192,3 +197,19 @@ SELECT a.assignment_id,
        '[{"_id":null,"min":25,"max":1200}]'::jsonb,
        'min/max по price'
 FROM assignments a WHERE a.title='Мин/Макс цена';
+
+INSERT INTO assignments (topic_id, title, description, difficulty, schema_json)
+VALUES (
+  1,
+  'Найди активные заказы',
+  'Выбери все заказы со статусом "A"',
+  'easy',
+  '{
+    "orders": [
+      {"_id": 1, "status": "A", "amount": 100},
+      {"_id": 2, "status": "B", "amount": 200},
+      {"_id": 3, "status": "A", "amount": 300}
+    ],
+    "required_method": "find"
+  }'::jsonb
+);
